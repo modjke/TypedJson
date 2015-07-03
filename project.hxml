@@ -1,0 +1,9 @@
+-lib compiletime
+-lib tjson
+
+-D fdb
+-debug
+
+-cp src
+-main Main
+-swf bin/main.swf

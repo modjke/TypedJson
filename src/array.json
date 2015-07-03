@@ -1,0 +1,20 @@
+[
+	{
+		"int": 0.2,
+		"intArray": [0, 1, 2, 3, 4, 5, 6],
+		"float": 1.2,
+		"string": "some string",
+		"stringMap": {
+			"Item #1": {
+				"index": 0,
+				"content": "hey!"
+			}
+		},	
+		"intMap": {
+			"0": {
+				"index": 0,
+				"content": "hey!"
+			}
+		}
+	}
+]
