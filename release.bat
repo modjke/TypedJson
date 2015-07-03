@@ -1,0 +1,1 @@
+haxe project.hxml --no-traces

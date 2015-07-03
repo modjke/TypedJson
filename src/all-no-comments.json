@@ -1,0 +1,131 @@
+
+{
+
+	"bool": true,
+	
+	
+	"int": 100,
+	
+
+	"float": 250.250,
+	
+	"string": "Hello, world!",
+	
+
+	"any": {
+		"bool": true,
+		"int": 100,
+		"float": 250.250,
+		"string": "Hello, world!",
+		"array": [250, "hey"]
+	},
+	
+
+	"typed": {
+		"index": 0,
+		"content": "item0"
+	},
+	
+	
+
+	"boolArray": [true, false, true, false],
+	
+
+	"intArray": [0, 1, 2, 3],
+
+	"floatArray": [0.0, 0.1, 0.2, 0.3],
+
+	"stringArray": ["Hello", ",", "world", "!"],
+
+	"anyArray": [250, "hey", { "field": "hey" }],
+
+	"typedArray": [ { "index" : 0, "content": "item0" }, { "index" : 1, "content": "item1" }, { "index" : 2, "content": "item2" }, { "index" : 3, "content": "item3" } ],
+		
+
+	"stringMapOfBool": {
+		"key #0" : true,
+		"key #1" : false,
+		"key #2" : true,
+		"key #3" : false
+	},
+
+	"stringMapOfInt": {
+		"key #0" : 0,
+		"key #1" : 1,
+		"key #2" : 2,
+		"key #3" : 3
+	},
+	
+	"stringMapOfFloat": {
+		"key #0" : 0.0,
+		"key #1" : 0.1,
+		"key #2" : 0.2,
+		"key #3" : 0.3
+	},
+		
+	"stringMapOfString": {
+		"key #0" : "Hello",
+		"key #1" : ",",
+		"key #2" : "World",
+		"key #3" : "!"
+	},
+		
+	"stringMapOfAny": {
+		"bool" : true,
+		"int" : 200,
+		"array" : [0, 1, 2, 3],
+		"dyn" : { "field" : "hey" }
+	},
+	
+	"stringMapOfTyped": {
+		"key #0" : { "index" : 0, "content": "item0" },
+		"key #1" : { "index" : 1, "content": "item1" },
+		"key #2" : { "index" : 2, "content": "item2" },
+		"key #3" : { "index" : 3, "content": "item3" }
+	},
+	
+	"intMapOfBool": {
+		"0" : true,
+		"1" : false,
+		"2" : true,
+		"3" : false
+	},
+		
+
+	"intMapOfInt": {
+		"0" : 0,
+		"1" : 1,
+		"2" : 2,
+		"3" : 3
+	},
+	
+
+	"intMapOfFloat": {
+		"0" : 0.0,
+		"1" : 0.1,
+		"2" : 0.2,
+		"3" : 0.3
+	},
+		
+	"intMapOfString": {
+		"0" : "Hello",
+		"1" : ",",
+		"2" : "World",
+		"3" : "!"
+	},
+		
+	"intMapOfAny": {
+		"0" : true,
+		"1" : 200,
+		"2" : [0, 1, 2, 3],
+		"3" : { "field" : "hey" }
+	},
+	
+	"intMapOfTyped": {
+		"0" : { "index" : 0, "content": "item0" },
+		"1" : { "index" : 1, "content": "item1" },
+		"2" : { "index" : 2, "content": "item2" },
+		"3" : { "index" : 3, "content": "item3" }
+	}
+	
+}

@@ -1,7 +1,10 @@
 package ;
+import flash.Lib;
+import flash.text.TextField;
+import flash.text.TextFieldAutoSize;
 import haxe.Constraints.IMap;
-import haxe.ds.Option;
 import haxe.Json;
+import haxe.Timer;
 import mod.typedjson.IJsonSerializable;
 import mod.typedjson.TypedJsonParser;
 import tjson.TJSON;
@@ -11,20 +14,45 @@ class Main
 
 	public static function main() 
 	{		
-		//trace(Response.deserializeFromString(CompileTime.readFile("response.json")));
-		
-		var p = new TypedJsonParser(CompileTime.readFile("all.json"));
-		var response = All.deserialize(p);
-
-		trace(Json.stringify(response, null, "   "));
-
-		
+		//trace(Response.deserializeFromString(CompileTime.readFile("response.json")));		
 		//TODO:implement
 		//trace(Response.deserializeArrayFromString(CompileTime.readFile("array.json")));
+		
+		runBenchmark();
 	}
 	
+	static function runBenchmark()
+	{
+		var input = CompileTime.readFile("all-no-comments.json");
+		
+		Json.parse(input);
+		
+		var tf = new TextField();	
+		tf.autoSize = TextFieldAutoSize.LEFT;
+		tf.multiline = true;
+		Lib.current.addChild(tf);
+		
+		tf.appendText("Testing...\n");
+		
+		function bench(name:String, count:Int, callback:Void->Void)
+		{
+			tf.appendText(name + ": ");
+			var start = Timer.stamp();		
+			for (i in 0...count) callback();
+			var elapsed = Timer.stamp() - start;
+			tf.appendText('$elapsed ms\n');
+		}
+		Timer.delay(function () 
+		{
+			bench("Typed json", 2000, function () All.deserialize(new TypedJsonParser(input)));
+			bench("Haxe json", 2000, function () Json.parse(input));
+			bench("TJSON", 2000, function () TJSON.parse(input));
+		}, 1000);
+		
+	}
+	
+	
 }
-
 
 class All 
 {
