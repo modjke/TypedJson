@@ -37,7 +37,6 @@
 package mod.typedjson;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
-import mod.typedjson.TypedJson.TypedJsonParser;
 
 class TypedJsonParser
 {
@@ -63,12 +62,12 @@ class TypedJsonParser
 		_lastPoistion = pos;		
     }
 	
-	public function object():Void
+	public function nextObject():Void
 	{
 		if (getNextSymbol() != "{") throw "Not an object";
 	}
 	
-	public function field():Null<String>
+	public function nextProperty():Null<String>
 	{
 		var field = getNextSymbol();
 		if (field == ",") field = getNextSymbol();
@@ -107,57 +106,18 @@ class TypedJsonParser
 		return sym;
 	}
 	
-	public function arrayOfInt():Array<Int>
+	public function any():Dynamic
 	{
-		if (getNextSymbol() != "[") throw "Not an array";
+		skip();
 		
-		var o = new Array<Int>();		
-		var s:String = getNextSymbol();
-		while (s != "]")
-		{
-			o.push(intOrThrow(s));
-			
-			s = getNextSymbol();
-			if (s == ",") s = getNextSymbol();
-		}
-		
-		return o;
+		return { };
 	}
 	
-	public function arrayOfFloat():Array<Float>
+	public function typed<T>(parse:TypedJsonParser->T):T
 	{
-		if (getNextSymbol() != "[") throw "Not an array";
-		
-		var o = new Array<Float>();		
-		var s:String = getNextSymbol();
-		while (s != "]")
-		{
-			o.push(floatOrThrow(s));
-			
-			s = getNextSymbol();
-			if (s == ",") s = getNextSymbol();
-		}
-		
-		return o;
+		return parse(this);
 	}
-	
-	public function arrayOfBool():Array<Bool>
-	{
-		if (getNextSymbol() != "[") throw "Not an array";
-		
-		var o = new Array<Bool>();		
-		var s:String = getNextSymbol();
-		while (s != "]")
-		{
-			o.push(boolOrThrow(s));
-			
-			s = getNextSymbol();
-			if (s == ",") s = getNextSymbol();
-		}
-		
-		return o;
-	}
-	
+
 	public function arrayOf<T>(deserialize:TypedJsonParser->T):Array<T>
 	{
 		if (getNextSymbol() != "[") throw "Not an array";
@@ -176,6 +136,8 @@ class TypedJsonParser
 		return o;
 	}
 	
+	
+	
 	public function intMapOf<T>(deserialize:TypedJsonParser->T):IntMap<T>
 	{
 		if (getNextSymbol() != "{") throw "Not a map";
@@ -185,9 +147,12 @@ class TypedJsonParser
 		while (s != "}")
 		{
 			if (getNextSymbol() != ":") throw "Expected a comma";
-			o.set(intOrThrow(s), deserialize(this));
+			var k = intOrThrow(s);
+			if (o.exists(k)) throw "Key duplicate: " + k;
+			o.set(k, deserialize(this));
 			
 			s = getNextSymbol();
+			if (s == ",") s = getNextSymbol();
 		}
 		
 		return o;
@@ -204,29 +169,28 @@ class TypedJsonParser
 			if (!quoted) throw "Expected string as a key";
 			
 			if (getNextSymbol() != ":") throw "Expected a comma";
+			if (o.exists(s)) throw "Key duplicate: " + s;
 			o.set(s, deserialize(this));
 			
 			s = getNextSymbol();
+			if (s == ",") s = getNextSymbol();
 		}
 		
 		return o;
 	}
 	
 	public function skip()
-	{
-		getNextSymbol();
-		if (!quoted)
-		{
-			var c = 1;
-			while (c > 0)
-				switch (getNextSymbol())
-				{
-					case "{" | "[": c++;
-					case "}" | "]": c--;
-				}
-		}
+	{				
+		var c = 0;
+		do {
+			switch (getNextSymbol())
+			{
+				case "{" | "[": c++;
+				case "}" | "]": c--;
+			}
+		} while (c != 0);
 	}
-	
+
 	inline function boolOrThrow(s:String):Bool
 	{
 		return switch (s.toLowerCase())
@@ -250,6 +214,30 @@ class TypedJsonParser
 		if (Math.isNaN(f)) throw "Not a float";
 		return f;
 	}
+	
+	static function _parseString(parser:TypedJsonParser):String return parser.string();
+	static function _parseAny(parser:TypedJsonParser):Dynamic 	return parser.any();
+	static function _parseBool(parser:TypedJsonParser):Bool 	return parser.bool();
+	static function _parseFloat(parser:TypedJsonParser):Float 	return parser.float();		
+	static function _parseInt(parser:TypedJsonParser):Int 		return parser.int();
+	
+	public function arrayOfInt():Array<Int>				return arrayOf(_parseInt);
+	public function arrayOfFloat():Array<Float>			return arrayOf(_parseFloat);	
+	public function arrayOfBool():Array<Bool> 			return arrayOf(_parseBool);	
+	public function arrayOfString():Array<String> 		return arrayOf(_parseString);	
+	public function arrayOfAny():Array<Dynamic>			return arrayOf(_parseAny);
+	
+	public function intMapOfInt():IntMap<Int>			return intMapOf(_parseInt);
+	public function intMapOfFloat():IntMap<Float>		return intMapOf(_parseFloat);	
+	public function intMapOfBool():IntMap<Bool> 		return intMapOf(_parseBool);	
+	public function intMapOfString():IntMap<String> 	return intMapOf(_parseString);	
+	public function intMapOfAny():IntMap<Dynamic>		return intMapOf(_parseAny);
+	
+	public function stringMapOfInt():StringMap<Int>			return stringMapOf(_parseInt);
+	public function stringMapOfFloat():StringMap<Float>		return stringMapOf(_parseFloat);	
+	public function stringMapOfBool():StringMap<Bool> 		return stringMapOf(_parseBool);	
+	public function stringMapOfString():StringMap<String> 	return stringMapOf(_parseString);	
+	public function stringMapOfAny():StringMap<Dynamic>		return stringMapOf(_parseAny);
 
 	function undoNextSymbol()
 	{
@@ -262,7 +250,7 @@ class TypedJsonParser
 		
 	}
 	
-	public function getNextSymbol() {
+	function getNextSymbol() {
 	
 		_lastQuoted = quoted;
 		_lastLine = currentLine;
@@ -431,7 +419,6 @@ class TypedJsonParser
 			throw "Unexpected end of data. Expected ( "+quoteType+" )";
 		}
 		
-		trace("getNextSymbol: " + symbol);
 		return symbol;
 	}
 
