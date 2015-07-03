@@ -60,8 +60,8 @@ class Response
 				case "objectArray": o.objectArray = p.arrayOf(Item.deserialize);
 				case "float": o.float = p.float();
 				case "string": o.string = p.string();
-				//case "stringMap": o.stringMap = p.stringMapOf(Item.deserialize);
-				//case "intMap": o.intMap = p.intMapOf(Item.deserialize); 
+				case "stringMap": o.stringMap = p.stringMapOf(Item.deserialize);
+				case "intMap": o.intMap = p.intMapOf(Item.deserialize); 
 				case _: 
 					p.skip();
 					trace('Unknown property: $f');

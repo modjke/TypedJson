@@ -1,36 +1,66 @@
+/*
+ * TypedJson
+ * 
+ * Typed json parser and encoder for haxe
+ * 
+ * Copyright (c) 2015, Ignatiev Mikhail All rights reserved
+ * 
+ * Original json parsing code from TJSON https://github.com/martamius/TJSON
+ * Thanks for "tolerant" part of the parsing logic goes to Jordan CM Wambaugh
+ * https://github.com/martamius
+ * jordan@wambaugh.org
+ * http://jordan.wambaugh.org
+ * 
+ * Copyright (c) 2012, Jordan CM Wambaugh All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, 
+ * 
+ * are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice, 
+ * this list of conditions and the following disclaimer.
+ * 
+ * Redistributions in binary form must reproduce the above copyright notice, 
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package mod.typedjson;
 import haxe.ds.IntMap;
-import haxe.macro.Context;
-import haxe.macro.Expr;
-import haxe.macro.Expr.ExprOf;
+import haxe.ds.StringMap;
 import mod.typedjson.TypedJson.TypedJsonParser;
-
-using haxe.macro.Tools;
-
-class TypedJson
-{
-	public static var OBJECT_REFERENCE_PREFIX = "@~obRef#";
-}
 
 class TypedJsonParser
 {
-	var pos:Int;
-	var json:String;
-	var lastSymbolQuoted:Bool; //true if the last symbol was in quotes.
+	var pos:Int;	
 	var currentLine:Int;
-	var cache:Array<Dynamic>;
-	var floatRegex:EReg;
-	var intRegex:EReg;
+	var quoted:Bool; //true if the last symbol was in quotes.
 	
-	public function new(vjson:String)
+	var json:String;	
+	
+	var _lastQuoted:Bool;	//used to undo
+	var _lastPoistion:Int;	//used to undo
+	var _lastLine:Int;		//used to undo
+	
+
+	public function new(jsonString:String)
     {
-		json = vjson;
+		json = jsonString;
 		currentLine = 1;
-        lastSymbolQuoted = false;
-		pos = 0;
-		floatRegex = ~/^-?[0-9]*\.[0-9]+$/;
-		intRegex = ~/^-?[0-9]+$/;	
-		cache = new Array();
+		pos = 0;		
+		
+		_lastLine = currentLine;
+        quoted = false;
+		_lastPoistion = pos;		
     }
 	
 	public function object():Void
@@ -52,28 +82,28 @@ class TypedJsonParser
 	public function int():Int
 	{		
 		var o = intOrThrow(getNextSymbol());
-		if (lastSymbolQuoted) throw "Quoted int";		
+		if (quoted) throw "Quoted int";		
 		return o;
 	}
 	
 	public function float():Float
 	{
 		var f = floatOrThrow(getNextSymbol());
-		if (lastSymbolQuoted) throw "Quoted float";
+		if (quoted) throw "Quoted float";
 		return f;
 	}	
 
 	public function bool():Bool
 	{
 		var b = boolOrThrow(getNextSymbol());
-		if (lastSymbolQuoted) throw "Quoted bool";
+		if (quoted) throw "Quoted bool";
 		return b;
 	}
 	
 	public function string():String
 	{
 		var sym = getNextSymbol();
-		if (!lastSymbolQuoted) throw "Not a string";
+		if (!quoted) throw "Not a string";
 		return sym;
 	}
 	
@@ -136,6 +166,8 @@ class TypedJsonParser
 		var s:String = getNextSymbol();
 		while (s != "]")
 		{
+			undoNextSymbol();
+			
 			o.push(deserialize(this));
 			
 			s = getNextSymbol();
@@ -148,12 +180,34 @@ class TypedJsonParser
 	{
 		if (getNextSymbol() != "{") throw "Not a map";
 		
-		var o = new IntMap<T>();		
-		do {
-			var field = getNextSymbol();
-			var comma = getNextSymbol();
+		var o = new IntMap<T>();	
+		var s = getNextSymbol();
+		while (s != "}")
+		{
+			if (getNextSymbol() != ":") throw "Expected a comma";
+			o.set(intOrThrow(s), deserialize(this));
 			
-		} while (getNextSymbol() != "}");
+			s = getNextSymbol();
+		}
+		
+		return o;
+	}
+	
+	public function stringMapOf<T>(deserialize:TypedJsonParser->T):StringMap<T>
+	{
+		if (getNextSymbol() != "{") throw "Not a map";
+		
+		var o = new StringMap<T>();	
+		var s = getNextSymbol();
+		while (s != "}")
+		{
+			if (!quoted) throw "Expected string as a key";
+			
+			if (getNextSymbol() != ":") throw "Expected a comma";
+			o.set(s, deserialize(this));
+			
+			s = getNextSymbol();
+		}
 		
 		return o;
 	}
@@ -161,7 +215,7 @@ class TypedJsonParser
 	public function skip()
 	{
 		getNextSymbol();
-		if (!lastSymbolQuoted)
+		if (!quoted)
 		{
 			var c = 1;
 			while (c > 0)
@@ -196,140 +250,25 @@ class TypedJsonParser
 		if (Math.isNaN(f)) throw "Not a float";
 		return f;
 	}
+
+	function undoNextSymbol()
+	{
+		if (_lastLine == currentLine && _lastPoistion == pos)
+			throw "Can't undo more than once";
+			
+		pos = _lastPoistion;
+		quoted = _lastQuoted;
+		currentLine = _lastLine;
+		
+	}
 	
-	/*
-    function doParse():Dynamic{
-    	try{
-			//determine if objector array
-			return switch (getNextSymbol()) {
-				case '{': doObject();
-				case '[': doArray();
-				case s: convertSymbolToProperType(s);
-			}
-		}catch(e:String){
-			throw "Exception parsing json on line " + currentLine + ": " + e;
-		}
-	}
-
-	private function doObject():Dynamic{
-		var o:Dynamic = { };
-		var val:Dynamic ='';
-		var key:String;
-		var isClassOb:Bool = false;
-		cache.push(o);
-		while(pos < json.length){
-			key=getNextSymbol();
-			if(key == "," && !lastSymbolQuoted)continue;
-			if(key == "}" && !lastSymbolQuoted){
-				//end of the object. Run the TJ_unserialize function if there is one
-				if( isClassOb && #if flash9 try o.TJ_unserialize != null catch( e : Dynamic ) false #elseif (cs || java) Reflect.hasField(o, "TJ_unserialize") #else o.TJ_unserialize != null #end  ) {
-					o.TJ_unserialize();
-				}
-				return o;
-			}
-
-			var seperator = getNextSymbol();
-			if(seperator != ":"){
-				throw("Expected ':' but got '"+seperator+"' instead.");
-			}
-
-			var v = getNextSymbol();
-
-			if(key == '_hxcls'){
-				var cls =Type.resolveClass(v);
-				if(cls==null) throw "Invalid class name - "+v;
-				o = Type.createEmptyInstance(cls);
-				cache.pop();
-				cache.push(o);
-				isClassOb = true;
-				continue;
-			}
-
-
-			if(v == "{" && !lastSymbolQuoted){
-				val = doObject();
-			}else if(v == "[" && !lastSymbolQuoted){
-				val = doArray();
-			}else{
-				val = convertSymbolToProperType(v);
-			}
-			Reflect.setField(o,key,val);
-		}
-		throw "Unexpected end of file. Expected '}'";
+	public function getNextSymbol() {
+	
+		_lastQuoted = quoted;
+		_lastLine = currentLine;
+		_lastPoistion = pos;
 		
-	}
-
-	private function doArray():Dynamic{
-		var a:Array<Dynamic> = new Array<Dynamic>();
-		var val:Dynamic;
-		while(pos < json.length){
-			val=getNextSymbol();
-			if(val == ',' && !lastSymbolQuoted){
-				continue;
-			}
-			else if(val == ']' && !lastSymbolQuoted){
-				return a;
-			}
-			else if(val == "{" && !lastSymbolQuoted){
-				val = doObject();
-			}else if(val == "[" && !lastSymbolQuoted){
-				val = doArray();
-			}else{
-				val = convertSymbolToProperType(val);
-			}
-			a.push(val);
-		}
-		throw "Unexpected end of file. Expected ']'";
-	}
-
-	private function convertSymbolToProperType(symbol):Dynamic{
-		if(lastSymbolQuoted) {
-			//value was in quotes, so it's a string.
-			//look for reference prefix, return cached reference if it is
-			if(StringTools.startsWith(symbol,TypedJson.OBJECT_REFERENCE_PREFIX)){
-				var idx:Int = Std.parseInt(symbol.substr(TypedJson.OBJECT_REFERENCE_PREFIX.length));
-				return cache[idx];
-			}
-			return symbol; //just a normal string so return it
-		}
-		if(looksLikeFloat(symbol)){
-			return Std.parseFloat(symbol);
-		}
-		if(looksLikeInt(symbol)){
-			return Std.parseInt(symbol);
-		}
-		if(symbol.toLowerCase() == "true"){
-			return true;
-		}
-		if(symbol.toLowerCase() == "false"){
-			return false;
-		}
-		if(symbol.toLowerCase() == "null"){
-			return null;
-		}
-		
-		return symbol;
-	}
-
-
-	private function looksLikeFloat(s:String):Bool{
-		return floatRegex.match(s) || (
-			intRegex.match(s) && {
-				var intStr = intRegex.matched(0);
-				if (intStr.charCodeAt(0) == "-".code)
-					intStr > "-2147483648";
-				else
-					intStr > "2147483647";
-			}
-		);
-	}
-
-	private function looksLikeInt(s:String):Bool{
-		return intRegex.match(s);
-	}
-	*/
-	public function getNextSymbol(){
-		lastSymbolQuoted=false;
+		quoted=false;
 		var c:String = '';
 		var inQuote:Bool = false;
 		var quoteType:String="";
@@ -476,7 +415,7 @@ class TypedJsonParser
 				if(c=="'" || c=='"'){
 					inQuote = true;
 					quoteType = c;
-					lastSymbolQuoted = true;
+					quoted = true;
 					continue;
 				}else{
 					inSymbol=true;
