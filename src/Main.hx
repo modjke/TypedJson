@@ -18,10 +18,10 @@ class Main
 		//TODO:implement
 		//trace(Response.deserializeArrayFromString(CompileTime.readFile("array.json")));
 		
-		//runBenchmark();
+		runBenchmark();
 		
-		var input = CompileTime.readFile("all.json");
-		All.parseUsing(new TypedJsonParser(input));
+		//var input = CompileTime.readFile("all.json");
+		//All.parseUsing(new TypedJsonParser(input));
 	}
 	
 	static function runBenchmark()
@@ -145,7 +145,7 @@ class All implements IParsable
 class TypedItem implements IParsable
 {
 	var index:Int;
-	var contents:String;
+	var content:String;
 	
 	/*
 	public static function parseUsing(p:TypedJsonParser):TypedItem

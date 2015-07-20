@@ -37,6 +37,7 @@
 package mod.typedjson;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
+import mod.log.MLog.mlog;
 
 class TypedJsonParser
 {
@@ -252,7 +253,8 @@ class TypedJsonParser
 		
 	}
 	
-	function getNextSymbol() {
+	function getNextSymbol() 
+	{
 	
 		_lastQuoted = quoted;
 		_lastLine = currentLine;

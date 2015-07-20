@@ -51,7 +51,7 @@ class ParsableBuilder
 		
 		var switchExpr:Expr = {
 			pos: Context.currentPos(),
-			expr: ESwitch(macro f, fieldCases, null)
+			expr: ESwitch(macro f, fieldCases, macro throw "Unknown field " + f)
 		}
 		
 		var fun:Function = { 
@@ -64,7 +64,9 @@ class ParsableBuilder
 				var out = new $typePath();								
 				var f:Null<String> = null;
 				while ((f = p.nextProperty()) != null) 
+				{
 					$switchExpr;
+				}
 				
 				return out;
 			}
@@ -120,13 +122,66 @@ class ParsableBuilder
 					case TDynamic(_): 
 						macro p.any();
 						
-					//case TInst(_.get() => {pack: [], name: "Array"}, [_]):
-					
-						
-					default: macro {
-						trace("Skipped field: " + $v { name } + " : " + $v { type.toString() } );
-						p.skip();						
-					}
+					case TInst(_.get() => { pack: [], name: "Array" }, [pType]):	
+						switch (pType.follow())
+						{
+							case TDynamic(_): macro p.arrayOfAny();
+							case TAbstract(_.get() => { pack: [], name: "Int" }, []): macro p.arrayOfInt();
+							case TAbstract(_.get() => { pack: [], name: "Float" }, []): macro p.arrayOfFloat();
+							case TAbstract(_.get() => { pack: [], name: "Bool" }, []): macro p.arrayOfBool();														
+							case TInst(_.get() => { pack: [], name: "String" }, []): macro p.arrayOfString();
+							case TInst(_.get() => ct, params) if (parsable(ct)):								
+								var name = ct.module + "." + ct.name + "." + parseUsingName;
+								var expr = Context.parse(name, Context.currentPos());
+								
+								macro p.arrayOf($expr);
+							default: 
+								throw 'Unsupported type parameter for Array: $pType';
+						}	
+					case TInst(_.get() => { pack: ["haxe"], name: "IMap" }, [kt, vt]):
+						switch (kt.follow())
+						{
+							case TInst(_.get() => { pack: [], name: "String" }, []):
+								switch (vt.follow())
+								{
+									case TDynamic(_): macro p.stringMapOfAny();
+									case TAbstract(_.get() => { pack: [], name: "Int" }, []): macro p.stringMapOfInt();
+									case TAbstract(_.get() => { pack: [], name: "Float" }, []): macro p.stringMapOfFloat();
+									case TAbstract(_.get() => { pack: [], name: "Bool" }, []): macro p.stringMapOfBool();													
+									case TInst(_.get() => { pack: [], name: "String" }, []): macro p.stringMapOfString();
+									case TInst(_.get() => ct, params) if (parsable(ct)):								
+										var name = ct.module + "." + ct.name + "." + parseUsingName;
+										var expr = Context.parse(name, Context.currentPos());
+										
+										macro p.stringMapOf($expr);
+									default: 
+										throw 'Unsupported value type parameter for IMap: $vt';
+								}
+							case TAbstract(_.get() => { pack: [], name: "Int" }, []):
+								switch (vt.follow())
+								{
+									case TDynamic(_): macro p.intMapOfAny();
+									case TAbstract(_.get() => { pack: [], name: "Int" }, []): macro p.intMapOfInt();
+									case TAbstract(_.get() => { pack: [], name: "Float" }, []): macro p.intMapOfFloat();
+									case TAbstract(_.get() => { pack: [], name: "Bool" }, []): macro p.intMapOfBool();													
+									case TInst(_.get() => { pack: [], name: "String" }, []): macro p.intMapOfString();
+									case TInst(_.get() => ct, params) if (parsable(ct)):								
+										var name = ct.module + "." + ct.name + "." + parseUsingName;
+										var expr = Context.parse(name, Context.currentPos());
+										
+										macro p.intMapOf($expr);
+									default: 
+										throw 'Unsupported value type parameter for IMap: $vt';
+								}
+							default:
+								throw 'Unsupported key type paramteters for IMap: $kt';
+						}
+					default: 
+						trace(name, type);
+						macro {					
+							trace("Skipped field: " + $v { name } + " : " + $v { type.toString() } );
+							p.skip();						
+						}
 				}
 			case _: throw 'Field type ${cType.toString()} not supported';
 		}
