@@ -5,7 +5,7 @@ import flash.text.TextFieldAutoSize;
 import haxe.Constraints.IMap;
 import haxe.Json;
 import haxe.Timer;
-import mod.typedjson.IJsonSerializable;
+import mod.typedjson.IParsable;
 import mod.typedjson.TypedJsonParser;
 import tjson.TJSON;
 
@@ -18,14 +18,15 @@ class Main
 		//TODO:implement
 		//trace(Response.deserializeArrayFromString(CompileTime.readFile("array.json")));
 		
-		runBenchmark();
+		//runBenchmark();
+		
+		var input = CompileTime.readFile("all.json");
+		All.parseUsing(new TypedJsonParser(input));
 	}
 	
 	static function runBenchmark()
 	{
 		var input = CompileTime.readFile("all-no-comments.json");
-		
-		Json.parse(input);
 		
 		var tf = new TextField();	
 		tf.autoSize = TextFieldAutoSize.LEFT;
@@ -44,7 +45,7 @@ class Main
 		}
 		Timer.delay(function () 
 		{
-			bench("Typed json", 2000, function () All.deserialize(new TypedJsonParser(input)));
+			bench("Typed json", 2000, function () All.parseUsing(new TypedJsonParser(input)));
 			bench("Haxe json", 2000, function () Json.parse(input));
 			bench("TJSON", 2000, function () TJSON.parse(input));
 		}, 1000);
@@ -54,7 +55,7 @@ class Main
 	
 }
 
-class All 
+class All implements IParsable
 {
 	//single items
 	var bool:	Bool;		
@@ -90,7 +91,8 @@ class All
 	
 	public function new() {}
 	
-	public static function deserialize(p:TypedJsonParser):All
+	/*
+	public static function parseUsing(p:TypedJsonParser):All
 	{
 		var o = new All();
 		
@@ -106,28 +108,28 @@ class All
 				case "float":	o.float = p.float();
 				case "string": 	o.string = p.string();				
 				case "any": 	o.any = p.any();
-				case "typed": 	o.typed = p.typed(TypedItem.deserialize);
+				case "typed": 	o.typed = p.typed(TypedItem.parseUsing);
 				
 				case "boolArray": 	o.boolArray = p.arrayOfBool();
 				case "intArray": 	o.intArray = p.arrayOfInt();
 				case "floatArray": 	o.floatArray = p.arrayOfFloat();
 				case "stringArray": o.stringArray = p.arrayOfString();
 				case "anyArray":	o.anyArray = p.arrayOfAny();
-				case "typedArray": 	o.typedArray = p.arrayOf(TypedItem.deserialize);
+				case "typedArray": 	o.typedArray = p.arrayOf(TypedItem.parseUsing);
 				
 				case "stringMapOfBool":		o.stringMapOfBool 	= p.stringMapOfBool();
 				case "stringMapOfInt":		o.stringMapOfInt 	= p.stringMapOfInt();
 				case "stringMapOfFloat":	o.stringMapOfFloat 	= p.stringMapOfFloat();
 				case "stringMapOfString":	o.stringMapOfString = p.stringMapOfString();
 				case "stringMapOfAny":		o.stringMapOfAny	= p.stringMapOfAny();
-				case "stringMapOfTyped":	o.stringMapOfTyped	= p.stringMapOf(TypedItem.deserialize);
+				case "stringMapOfTyped":	o.stringMapOfTyped	= p.stringMapOf(TypedItem.parseUsing);
 				
 				case "intMapOfBool":	o.intMapOfBool 		= p.intMapOfBool();
 				case "intMapOfInt":		o.intMapOfInt 		= p.intMapOfInt();
 				case "intMapOfFloat":	o.intMapOfFloat 	= p.intMapOfFloat();
 				case "intMapOfString":	o.intMapOfString 	= p.intMapOfString();
 				case "intMapOfAny":		o.intMapOfAny		= p.intMapOfAny();
-				case "intMapOfTyped":	o.intMapOfTyped		= p.intMapOf(TypedItem.deserialize);
+				case "intMapOfTyped":	o.intMapOfTyped		= p.intMapOf(TypedItem.parseUsing);
 				
 				case _: 
 				    p.skip();
@@ -137,15 +139,16 @@ class All
 		
 		return o;
 	}
-	
+	*/
 }
 
-class TypedItem implements IJsonSerializable
+class TypedItem implements IParsable
 {
 	var index:Int;
 	var contents:String;
 	
-	public static function deserialize(p:TypedJsonParser):TypedItem
+	/*
+	public static function parseUsing(p:TypedJsonParser):TypedItem
 	{
 		var o = new TypedItem();
 		
@@ -165,4 +168,5 @@ class TypedItem implements IJsonSerializable
 		
 		return o;
 	}
+	*/
 }

@@ -94,7 +94,7 @@
 		"int" : 200,
 		"array" : [0, 1, 2, 3],
 		"dyn" : { "field" : "hey" }
-	}
+	},
 	
 	//var stringMapOfTyped:		IMap<String, SimpleItem>;
 	"stringMapOfTyped": {
@@ -146,7 +146,7 @@
 		"1" : 200,
 		"2" : [0, 1, 2, 3],
 		"3" : { "field" : "hey" }
-	}
+	},
 	
 	//var intMapOfTyped:	IMap<Int, SimpleItem>;
 	"intMapOfTyped": {

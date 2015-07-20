@@ -179,7 +179,7 @@ class TypedJsonParser
 		return o;
 	}
 	
-	public function skip()
+	public function skip():Dynamic
 	{				
 		var c = 0;
 		do {
@@ -189,6 +189,8 @@ class TypedJsonParser
 				case "}" | "]": c--;
 			}
 		} while (c != 0);
+		
+		return null;
 	}
 
 	inline function boolOrThrow(s:String):Bool
@@ -221,17 +223,17 @@ class TypedJsonParser
 	static function _parseFloat(parser:TypedJsonParser):Float 	return parser.float();		
 	static function _parseInt(parser:TypedJsonParser):Int 		return parser.int();
 	
-	public function arrayOfInt():Array<Int>				return arrayOf(_parseInt);
-	public function arrayOfFloat():Array<Float>			return arrayOf(_parseFloat);	
-	public function arrayOfBool():Array<Bool> 			return arrayOf(_parseBool);	
-	public function arrayOfString():Array<String> 		return arrayOf(_parseString);	
-	public function arrayOfAny():Array<Dynamic>			return arrayOf(_parseAny);
+	public function arrayOfInt():Array<Int>					return arrayOf(_parseInt);
+	public function arrayOfFloat():Array<Float>				return arrayOf(_parseFloat);	
+	public function arrayOfBool():Array<Bool> 				return arrayOf(_parseBool);	
+	public function arrayOfString():Array<String> 			return arrayOf(_parseString);	
+	public function arrayOfAny():Array<Dynamic>				return arrayOf(_parseAny);
 	
-	public function intMapOfInt():IntMap<Int>			return intMapOf(_parseInt);
-	public function intMapOfFloat():IntMap<Float>		return intMapOf(_parseFloat);	
-	public function intMapOfBool():IntMap<Bool> 		return intMapOf(_parseBool);	
-	public function intMapOfString():IntMap<String> 	return intMapOf(_parseString);	
-	public function intMapOfAny():IntMap<Dynamic>		return intMapOf(_parseAny);
+	public function intMapOfInt():IntMap<Int>				return intMapOf(_parseInt);
+	public function intMapOfFloat():IntMap<Float>			return intMapOf(_parseFloat);	
+	public function intMapOfBool():IntMap<Bool> 			return intMapOf(_parseBool);	
+	public function intMapOfString():IntMap<String> 		return intMapOf(_parseString);	
+	public function intMapOfAny():IntMap<Dynamic>			return intMapOf(_parseAny);
 	
 	public function stringMapOfInt():StringMap<Int>			return stringMapOf(_parseInt);
 	public function stringMapOfFloat():StringMap<Float>		return stringMapOf(_parseFloat);	
@@ -347,7 +349,7 @@ class TypedJsonParser
 						continue;
 					}
 					if (c == quoteType) {
-						trace("getNextSymbol: " + symbol);
+						////trace("getNextSymbol: " + symbol);
 						return symbol;
 					}
 					symbol+=c;
@@ -380,7 +382,7 @@ class TypedJsonParser
 			if (inSymbol){
 				if(c==' ' || c=="\n" || c=="\r" || c=="\t" || c==',' || c==":" || c=="}" || c=="]"){ //end of symbol, return it
 					pos--;
-					trace("getNextSymbol: " + symbol);
+					////trace("getNextSymbol: " + symbol);
 					return symbol;
 				}else{
 					symbol+=c;
@@ -394,7 +396,7 @@ class TypedJsonParser
 				}
 
 				if (c == "{" || c == "}" || c == "[" || c == "]" || c == "," || c == ":") {
-					trace("getNextSymbol: " + c);
+					////trace("getNextSymbol: " + c);
 					return c;
 				}
 
