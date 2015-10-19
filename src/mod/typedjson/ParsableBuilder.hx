@@ -204,101 +204,13 @@ class ParsableBuilder
 				}
 			case OTHER: throw 'Field type $cType not supported';
 		}
-		/*
-		var valueExpr = switch (cType)
-		{
-			case TPath(p): 
-				var type:Type = cType.toType();
-				
-				switch (type.follow())
-				{
-					case TAbstract(_.get() => { pack: [], name: "Int" }, []): 	
-						macro p.int();
-						
-					case TAbstract(_.get() => { pack: [], name: "Float" }, []):	
-						macro p.float();
-						
-					case TAbstract(_.get() => { pack: [], name: "Bool" }, []):	
-						macro p.bool();					
-						
-					case TInst(_.get() => { pack: [], name: "String" }, []): 	
-						macro p.string();		
-					
-					case TInst(_.get() => ct, []) if (parsable(ct)):
-						var name = ct.module + "." + ct.name + "." + parseUsingName + "(p)";
-						var expr = Context.parse(name, Context.currentPos());			
-						macro $expr;
-					
-					case TDynamic(_): 
-						macro p.any();
-						
-					case TInst(_.get() => { pack: [], name: "Array" }, [pType]):	
-						switch (pType.follow())
-						{
-							case TDynamic(_): macro p.arrayOfAny();
-							case TAbstract(_.get() => { pack: [], name: "Int" }, []): macro p.arrayOfInt();
-							case TAbstract(_.get() => { pack: [], name: "Float" }, []): macro p.arrayOfFloat();
-							case TAbstract(_.get() => { pack: [], name: "Bool" }, []): macro p.arrayOfBool();														
-							case TInst(_.get() => { pack: [], name: "String" }, []): macro p.arrayOfString();
-							case TInst(_.get() => ct, params) if (parsable(ct)):								
-								var name = ct.module + "." + ct.name + "." + parseUsingName;
-								var expr = Context.parse(name, Context.currentPos());
-								
-								macro p.arrayOf($expr);
-							default: 
-								throw 'Unsupported type parameter for Array: $pType';
-						}	
-					case TInst(_.get() => { pack: ["haxe"], name: "IMap" }, [kt, vt]):
-						switch (kt.follow())
-						{
-							case TInst(_.get() => { pack: [], name: "String" }, []):
-								switch (vt.follow())
-								{
-									case TDynamic(_): macro p.stringMapOfAny();
-									case TAbstract(_.get() => { pack: [], name: "Int" }, []): macro p.stringMapOfInt();
-									case TAbstract(_.get() => { pack: [], name: "Float" }, []): macro p.stringMapOfFloat();
-									case TAbstract(_.get() => { pack: [], name: "Bool" }, []): macro p.stringMapOfBool();													
-									case TInst(_.get() => { pack: [], name: "String" }, []): macro p.stringMapOfString();
-									case TInst(_.get() => ct, params) if (parsable(ct)):								
-										var name = ct.module + "." + ct.name + "." + parseUsingName;
-										var expr = Context.parse(name, Context.currentPos());
-										
-										macro p.stringMapOf($expr);
-									default: 
-										throw 'Unsupported value type parameter for IMap: $vt';
-								}
-							case TAbstract(_.get() => { pack: [], name: "Int" }, []):
-								switch (vt.follow())
-								{
-									case TDynamic(_): macro p.intMapOfAny();
-									case TAbstract(_.get() => { pack: [], name: "Int" }, []): macro p.intMapOfInt();
-									case TAbstract(_.get() => { pack: [], name: "Float" }, []): macro p.intMapOfFloat();
-									case TAbstract(_.get() => { pack: [], name: "Bool" }, []): macro p.intMapOfBool();													
-									case TInst(_.get() => { pack: [], name: "String" }, []): macro p.intMapOfString();
-									case TInst(_.get() => ct, params) if (parsable(ct)):								
-										var name = ct.module + "." + ct.name + "." + parseUsingName;
-										var expr = Context.parse(name, Context.currentPos());
-										
-										macro p.intMapOf($expr);
-									default: 
-										throw 'Unsupported value type parameter for IMap: $vt';
-								}
-							default:
-								throw 'Unsupported key type paramteters for IMap: $kt';
-						}
-					default: 
-						trace(name, type, type.follow(), cType);
-						macro {					
-							trace("Skipped field: " + $v { name } + " : " + $v { type.toString() } );
-							p.skip();						
-						}
-				}
-			case _: throw 'Field type ${cType.toString()} not supported';
-		}
-		*/
+		
 		return {
 			values: [macro $v{ name }],			
-			expr: macro out.$jsonField = $valueExpr
+			expr: macro { 
+				//trace("Parsing field: " + $v{jsonField});
+				out.$jsonField = $valueExpr;
+			}
 		}
 	}
 	

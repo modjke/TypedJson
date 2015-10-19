@@ -110,11 +110,123 @@ class TypedJsonParser
 	
 	public function any():Dynamic
 	{
-		skip();
-		
-		return { };
+		try{
+			//determine if objector array
+			return switch (getNextSymbol()) {
+				case '{': doObject();
+				case '[': doArray();
+				case s: convertSymbolToProperType(s);
+			}
+		}catch(e:String){
+			throw "Exception on line " + currentLine + ": " + e;
+		}
 	}
 	
+	private function doObject():Dynamic{
+		var o:Dynamic = { };
+		var val:Dynamic ='';
+		var key:String;
+		var isClassOb:Bool = false;
+		while(pos < json.length){
+			key=getNextSymbol();
+			if(key == "," && !quoted)continue;
+			if(key == "}" && !quoted){
+				return o;
+			}
+
+			var seperator = getNextSymbol();
+			if(seperator != ":"){
+				throw("Expected ':' but got '"+seperator+"' instead.");
+			}
+
+			var v = getNextSymbol();
+			if(v == "{" && !quoted){
+				val = doObject();
+			}else if(v == "[" && !quoted){
+				val = doArray();
+			}else{
+				val = convertSymbolToProperType(v);
+			}
+			Reflect.setField(o,key,val);
+		}
+		throw "Unexpected end of file. Expected '}'";
+		
+	}
+	
+	private function doArray():Dynamic{
+		var a:Array<Dynamic> = new Array<Dynamic>();
+		var val:Dynamic;
+		while(pos < json.length){
+			val=getNextSymbol();
+			if(val == ',' && !quoted){
+				continue;
+			}
+			else if(val == ']' && !quoted){
+				return a;
+			}
+			else if(val == "{" && !quoted){
+				val = doObject();
+			}else if(val == "[" && !quoted){
+				val = doArray();
+			}else{
+				val = convertSymbolToProperType(val);
+			}
+			a.push(val);
+		}
+		throw "Unexpected end of file. Expected ']'";
+	}
+	
+	private function convertSymbolToProperType(symbol):Dynamic{
+		if(quoted) {
+			return symbol; 
+		}
+		if(looksLikeFloat(symbol)){
+			return Std.parseFloat(symbol);
+		}
+		if(looksLikeInt(symbol)){
+			return Std.parseInt(symbol);
+		}
+		if(symbol.toLowerCase() == "true"){
+			return true;
+		}
+		if(symbol.toLowerCase() == "false"){
+			return false;
+		}
+		if(symbol.toLowerCase() == "null"){
+			return null;
+		}
+		
+		return symbol;
+	}
+	
+	var floatRegex = ~/^-?[0-9]*\.[0-9]+$/;
+	var intRegex = ~/^-?[0-9]+$/;	
+	
+	private function looksLikeFloat(s:String):Bool{
+		if(floatRegex.match(s)) return true;
+
+		if(intRegex.match(s)){
+			if({
+				var intStr = intRegex.matched(0);
+				if (intStr.charCodeAt(0) == "-".code)
+					intStr > "-2147483648";
+				else
+					intStr > "2147483647";
+			} ) return true;
+
+			var f:Float = Std.parseFloat(s);
+			if(f>2147483647.0) return true;
+			else if (f<-2147483648) return true;
+			
+		} 
+		return false;	
+	}
+
+	private function looksLikeInt(s:String):Bool{
+		return intRegex.match(s);
+	}
+
+
 	public function typed<T>(parse:TypedJsonParser->T):T
 	{
 		return parse(this);
@@ -320,25 +432,31 @@ class TypedJsonParser
 						continue;
 					}
 
-					if(c=="u"){
-                        var hexValue = 0;
-
-                        for (i in 0...4){
-                            if (pos >= json.length)
-                              throw "Unfinished UTF8 character";
-			                var nc = json.charCodeAt(pos++);
-                            hexValue = hexValue << 4;
-                            if (nc >= 48 && nc <= 57) // 0..9
-                              hexValue += nc - 48;
-                            else if (nc >= 65 && nc <= 70) // A..F
-                              hexValue += 10 + nc - 65;
-                            else if (nc >= 97 && nc <= 102) // a..f
-                              hexValue += 10 + nc - 95;
-                            else throw "Not a hex digit";
-                        }
-                        
+					if (c == "u") {
+						var uc = Std.parseInt("0x" + json.substr(pos, 4));
+						pos += 4;
 						var utf = new haxe.Utf8();
-						utf.addChar(hexValue);
+						
+						#if (neko || php || cpp)
+						if( uc <= 0x7F )
+							utf.addChar(uc);
+						else if( uc <= 0x7FF ) {
+							utf.addChar(0xC0 | (uc >> 6));
+							utf.addChar(0x80 | (uc & 63));
+						} else if( uc <= 0xFFFF ) {
+							utf.addChar(0xE0 | (uc >> 12));
+							utf.addChar(0x80 | ((uc >> 6) & 63));
+							utf.addChar(0x80 | (uc & 63));
+						} else {
+							utf.addChar(0xF0 | (uc >> 18));
+							utf.addChar(0x80 | ((uc >> 12) & 63));
+							utf.addChar(0x80 | ((uc >> 6) & 63));
+							utf.addChar(0x80 | (uc & 63));
+						}
+						#else
+						utf.addChar(uc);
+						#end	
+						
 						symbol += utf.toString();
                         
 						continue;
