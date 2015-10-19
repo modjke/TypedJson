@@ -18,10 +18,10 @@ class Main
 		//TODO:implement
 		//trace(Response.deserializeArrayFromString(CompileTime.readFile("array.json")));
 		
-		runBenchmark();
+		//runBenchmark();
 		
-		//var input = CompileTime.readFile("all.json");
-		//All.parseUsing(new TypedJsonParser(input));
+		var input = CompileTime.readFile("all.json");
+		All.parseUsing(new TypedJsonParser(input));
 	}
 	
 	static function runBenchmark()
@@ -55,10 +55,15 @@ class Main
 	
 }
 
+abstract ABool(Bool) from Bool to Bool
+{
+	
+}
+
 class All implements IParsable
 {
 	//single items
-	var bool:	Bool;		
+	var bool:	ABool;		
 	var int:	Int;
 	var float:	Float;
 	var string:	String;		

@@ -74,7 +74,8 @@ class TypedJsonParser
 		if (field == ",") field = getNextSymbol();
 		if (field == "}") return null;
 		
-		if (getNextSymbol() != ":") throw "Not a field";
+		var next = getNextSymbol();
+		if (next != ":") throw "Not a field, stopped on symbol: " + next + ", trying to read field: " + field;
 		
 		return field;
 	}

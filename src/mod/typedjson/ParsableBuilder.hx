@@ -16,6 +16,22 @@ import haxe.macro.TypeTools;
 using haxe.macro.Tools;
 using Lambda;
 
+enum EasyType
+{
+	INT; 
+	FLOAT; 
+	BOOL;
+	STRING;	
+	DYNAMIC;
+	PARSABLE(classType:ClassType);
+	
+	STRINGMAP(valType:EasyType);
+	INTMAP(valType:EasyType);
+	
+	ARRAY(easyType:EasyType);
+	OTHER;
+}
+
 //TODO: add type safety somethere
 //TODO: add type validation somethere
 class ParsableBuilder
@@ -51,7 +67,8 @@ class ParsableBuilder
 		
 		var switchExpr:Expr = {
 			pos: Context.currentPos(),
-			expr: ESwitch(macro f, fieldCases, macro throw "Unknown field " + f)
+			//expr: ESwitch(macro f, fieldCases, macro throw "Unknown field " + f)
+			expr: ESwitch(macro f, fieldCases, macro { p.skip(); trace("Skipped field: " + f); } )
 		}
 		
 		var fun:Function = { 
@@ -71,9 +88,7 @@ class ParsableBuilder
 				return out;
 			}
 		};
-		
-		trace(fun.expr.toString());
-		
+
 		var parseUsing:Field = {
 			name: parseUsingName,
 			access: [APublic, AStatic],
@@ -92,14 +107,109 @@ class ParsableBuilder
 		return buildFields;
 	}	
 	
+	static function extractEasyType(type:Type):EasyType
+	{
+		type = type.follow();
+		return switch (type)
+		{
+			case TAbstract(_.get() => { pack: [], name: name }, []):
+				switch (name)
+				{
+					case "Int": return INT;
+					case "Float": return FLOAT;
+					case "Bool": return BOOL;					
+					case _: OTHER;
+				}
+			case TInst(_.get() => classType, types):
+				if (parsable(classType))
+					PARSABLE(classType) 
+				else 
+					switch [classType, types]
+					{
+						case [_ => { pack: [], name: "String" }, []]: STRING;
+						case [_ => { pack: [], name: "Array" }, _ => [arrayType]]: ARRAY(extractEasyType(arrayType));
+						case [_ => { pack: ["haxe"], name: "IMap" }, _ => [keyType, valType]]:
+							switch (extractEasyType(keyType))
+							{
+								case INT: INTMAP(extractEasyType(valType));
+								case STRING: STRINGMAP(extractEasyType(valType));
+								case _: OTHER;
+							}
+						case _: OTHER;
+					}
+				
+			case TDynamic(_): DYNAMIC;
+			case _: OTHER;				
+		}
+	}
+	
 	static function createFieldCase(name:String, cType:ComplexType):Case
 	{						
 		var jsonField = name;
-		
+
+		var valueExpr = switch (extractEasyType(cType.toType()))
+		{
+			case INT: macro p.int();
+			case FLOAT:	macro p.float();
+			case BOOL: macro p.bool();
+			case DYNAMIC: macro p.any();
+			case STRING: macro p.string();
+			
+			case PARSABLE(classType):
+				var name = classType.module + "." + classType.name + "." + parseUsingName + "(p)";
+				var expr = Context.parse(name, Context.currentPos());			
+				macro $expr;
+				
+			case INTMAP(valType):
+				switch (valType)
+				{
+					case DYNAMIC: macro p.intMapOfAny();
+					case INT: macro p.intMapOfInt();
+					case FLOAT: macro p.intMapOfFloat();
+					case BOOL: macro p.intMapOfBool();
+					case STRING: macro p.intMapOfString();
+					case PARSABLE(classType):
+						var name = classType.module + "." + classType.name + "." + parseUsingName;
+						var expr = Context.parse(name, Context.currentPos());									
+						macro p.intMapOf($expr);
+					case _: throw 'Unsupported type parameter for IntMap: $cType';
+				}
+			case STRINGMAP(valType):
+				switch (valType)
+				{
+					case DYNAMIC: macro p.stringMapOfAny();
+					case INT: macro p.stringMapOfInt();
+					case FLOAT: macro p.stringMapOfFloat();
+					case BOOL: macro p.stringMapOfBool();
+					case STRING: macro p.stringMapOfString();
+					case PARSABLE(classType):
+						var name = classType.module + "." + classType.name + "." + parseUsingName;
+						var expr = Context.parse(name, Context.currentPos());									
+						macro p.stringMapOf($expr);
+					case _: throw 'Unsupported type parameter for StringMap: $cType';
+				}
+			case ARRAY(valType):
+				switch (valType)
+				{
+					case DYNAMIC: macro p.arrayOfAny();
+					case INT: macro p.arrayOfInt();
+					case FLOAT:  macro p.arrayOfFloat();
+					case BOOL: macro p.arrayOfBool();
+					case STRING:  macro p.arrayOfString();
+					case PARSABLE(classType):
+						var name = classType.module + "." + classType.name + "." + parseUsingName;
+						var expr = Context.parse(name, Context.currentPos());								
+						macro p.arrayOf($expr);
+					case _: throw 'Unsupported type parameter for Array: $cType';
+				}
+			case OTHER: throw 'Field type $cType not supported';
+		}
+		/*
 		var valueExpr = switch (cType)
 		{
 			case TPath(p): 
 				var type:Type = cType.toType();
+				
 				switch (type.follow())
 				{
 					case TAbstract(_.get() => { pack: [], name: "Int" }, []): 	
@@ -177,7 +287,7 @@ class ParsableBuilder
 								throw 'Unsupported key type paramteters for IMap: $kt';
 						}
 					default: 
-						trace(name, type);
+						trace(name, type, type.follow(), cType);
 						macro {					
 							trace("Skipped field: " + $v { name } + " : " + $v { type.toString() } );
 							p.skip();						
@@ -185,7 +295,7 @@ class ParsableBuilder
 				}
 			case _: throw 'Field type ${cType.toString()} not supported';
 		}
-		
+		*/
 		return {
 			values: [macro $v{ name }],			
 			expr: macro out.$jsonField = $valueExpr
