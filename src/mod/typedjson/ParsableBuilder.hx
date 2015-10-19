@@ -55,14 +55,15 @@ class ParsableBuilder
 		
 		for (field in buildFields)
 		{
-			switch (field.kind)
-			{
-				case FVar(t, e):										
-					fieldCases.push(createFieldCase(field.name, t));
-				case FProp(get, set, t, e):
-					fieldCases.push(createFieldCase(field.name, t));
-				case _: //
-			}
+			if (!field.access.has(AStatic))
+				switch (field.kind)
+				{
+					case FVar(t, e):							
+						fieldCases.push(createFieldCase(field.name, t));
+					case FProp(get, set, t, e):
+						fieldCases.push(createFieldCase(field.name, t));
+					case _: //
+				}
 		}
 		
 		var switchExpr:Expr = {
