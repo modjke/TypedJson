@@ -68,7 +68,7 @@ abstract ABool(Bool) from Bool to Bool
 @:publicFields
 class All implements IParsable
 {
-	var _null:Null<Bool>;
+	var _null:String;
 	//single items
 	var bool:	AABool;		
 	var int:	Int;

@@ -110,9 +110,10 @@ class TypedJsonParser
 	
 	public function string():String
 	{
-		var sym = getNextSymbol();
+		var next = getNextSymbol();
+		if (!quoted && next == "null") return null;
 		if (!quoted) throw "Not a string";
-		return sym;
+		return next;
 	}
 	
 	public function any():Dynamic
