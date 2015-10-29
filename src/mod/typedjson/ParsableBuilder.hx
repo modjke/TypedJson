@@ -99,6 +99,8 @@ class ParsableBuilder
 		
 		buildFields.push(parseUsing);
 		
+		trace(fun.expr.toString());
+		
 		
 		// add an empty constructor if necessary
 		var hasConstructor = Lambda.exists(buildFields, function (f) return f.name == "new");
@@ -108,9 +110,25 @@ class ParsableBuilder
 		return buildFields;
 	}	
 	
+	static function extractUnderlyingType(type:Type):Type
+	{				
+		type = type.follow();
+		switch (type)
+		{
+			case TAbstract(tRef, p):	
+				var t:AbstractType = tRef.get();							
+				if (t.meta.has(":coreType"))
+					return type
+				else 
+					return extractUnderlyingType(t.type);
+			case _: 
+				return type;
+		}
+	}
+	
 	static function extractEasyType(type:Type):EasyType
 	{
-		type = type.follow();
+		type = extractUnderlyingType(type);
 		return switch (type)
 		{
 			case TAbstract(_.get() => { pack: [], name: name }, []):

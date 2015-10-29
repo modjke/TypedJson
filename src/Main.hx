@@ -21,7 +21,8 @@ class Main
 		//runBenchmark();
 		
 		var input = CompileTime.readFile("all.json");
-		All.parseUsing(new TypedJsonParser(input));
+		var all = All.parseUsing(new TypedJsonParser(input));
+		trace(all.bool);
 	}
 	
 	static function runBenchmark()
@@ -55,15 +56,20 @@ class Main
 	
 }
 
+
+abstract AABool(ABool) from ABool to ABool
+{
+	
+}
 abstract ABool(Bool) from Bool to Bool
 {
 	
 }
-
+@:publicFields
 class All implements IParsable
 {
 	//single items
-	var bool:	ABool;		
+	var bool:	AABool;		
 	var int:	Int;
 	var float:	Float;
 	var string:	String;		
