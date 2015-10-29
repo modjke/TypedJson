@@ -99,9 +99,6 @@ class ParsableBuilder
 		
 		buildFields.push(parseUsing);
 		
-		trace(fun.expr.toString());
-		
-		
 		// add an empty constructor if necessary
 		var hasConstructor = Lambda.exists(buildFields, function (f) return f.name == "new");
 		if (!hasConstructor) 

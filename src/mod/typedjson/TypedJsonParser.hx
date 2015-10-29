@@ -68,7 +68,7 @@ class TypedJsonParser
 		if (getNextSymbol() != "{") throw "Not an object";
 	}
 	
-	public function nextProperty():Null<String>
+	public function nextProperty():String
 	{
 		var field = getNextSymbol();
 		if (field == ",") field = getNextSymbol();
@@ -80,23 +80,30 @@ class TypedJsonParser
 		return field;
 	}
 	
-	public function int():Int
+	public function int():Null<Int>
 	{		
-		var o = intOrThrow(getNextSymbol());
+		var next = getNextSymbol();
+		if (!quoted && next == "null") return null;
+		
+		var o = intOrThrow(next);
 		if (quoted) throw "Quoted int";		
 		return o;
 	}
 	
-	public function float():Float
+	public function float():Null<Float>
 	{
-		var f = floatOrThrow(getNextSymbol());
+		var next = getNextSymbol();
+		if (!quoted && next == "null") return null;		
+		var f = floatOrThrow(next);
 		if (quoted) throw "Quoted float";
 		return f;
 	}	
 
-	public function bool():Bool
+	public function bool():Null<Bool>
 	{
-		var b = boolOrThrow(getNextSymbol());
+		var next = getNextSymbol();
+		if (!quoted && next == "null") return null;
+		var b = boolOrThrow(next);
 		if (quoted) throw "Quoted bool";
 		return b;
 	}
@@ -331,29 +338,29 @@ class TypedJsonParser
 		return f;
 	}
 	
-	static function _parseString(parser:TypedJsonParser):String return parser.string();
-	static function _parseAny(parser:TypedJsonParser):Dynamic 	return parser.any();
-	static function _parseBool(parser:TypedJsonParser):Bool 	return parser.bool();
-	static function _parseFloat(parser:TypedJsonParser):Float 	return parser.float();		
-	static function _parseInt(parser:TypedJsonParser):Int 		return parser.int();
+	static function _parseString(parser:TypedJsonParser):String 	return parser.string();
+	static function _parseAny(parser:TypedJsonParser):Dynamic 		return parser.any();
+	static function _parseBool(parser:TypedJsonParser):Null<Bool> 	return parser.bool();
+	static function _parseFloat(parser:TypedJsonParser):Null<Float>	return parser.float();		
+	static function _parseInt(parser:TypedJsonParser):Null<Int> 	return parser.int();
 	
-	public function arrayOfInt():Array<Int>					return arrayOf(_parseInt);
-	public function arrayOfFloat():Array<Float>				return arrayOf(_parseFloat);	
-	public function arrayOfBool():Array<Bool> 				return arrayOf(_parseBool);	
+	public function arrayOfInt():Array<Null<Int>>			return arrayOf(_parseInt);
+	public function arrayOfFloat():Array<Null<Float>>		return arrayOf(_parseFloat);	
+	public function arrayOfBool():Array<Null<Bool>> 		return arrayOf(_parseBool);	
 	public function arrayOfString():Array<String> 			return arrayOf(_parseString);	
 	public function arrayOfAny():Array<Dynamic>				return arrayOf(_parseAny);
 	
-	public function intMapOfInt():IntMap<Int>				return intMapOf(_parseInt);
-	public function intMapOfFloat():IntMap<Float>			return intMapOf(_parseFloat);	
-	public function intMapOfBool():IntMap<Bool> 			return intMapOf(_parseBool);	
-	public function intMapOfString():IntMap<String> 		return intMapOf(_parseString);	
-	public function intMapOfAny():IntMap<Dynamic>			return intMapOf(_parseAny);
+	public function intMapOfInt():IntMap<Null<Int>>				return intMapOf(_parseInt);
+	public function intMapOfFloat():IntMap<Null<Float>>			return intMapOf(_parseFloat);	
+	public function intMapOfBool():IntMap<Null<Bool>> 			return intMapOf(_parseBool);	
+	public function intMapOfString():IntMap<String> 			return intMapOf(_parseString);	
+	public function intMapOfAny():IntMap<Dynamic>				return intMapOf(_parseAny);
 	
-	public function stringMapOfInt():StringMap<Int>			return stringMapOf(_parseInt);
-	public function stringMapOfFloat():StringMap<Float>		return stringMapOf(_parseFloat);	
-	public function stringMapOfBool():StringMap<Bool> 		return stringMapOf(_parseBool);	
-	public function stringMapOfString():StringMap<String> 	return stringMapOf(_parseString);	
-	public function stringMapOfAny():StringMap<Dynamic>		return stringMapOf(_parseAny);
+	public function stringMapOfInt():StringMap<Null<Int>>			return stringMapOf(_parseInt);
+	public function stringMapOfFloat():StringMap<Null<Float>>		return stringMapOf(_parseFloat);	
+	public function stringMapOfBool():StringMap<Null<Bool>> 		return stringMapOf(_parseBool);	
+	public function stringMapOfString():StringMap<String> 			return stringMapOf(_parseString);	
+	public function stringMapOfAny():StringMap<Dynamic>				return stringMapOf(_parseAny);
 
 	function undoNextSymbol()
 	{

@@ -22,7 +22,7 @@ class Main
 		
 		var input = CompileTime.readFile("all.json");
 		var all = All.parseUsing(new TypedJsonParser(input));
-		trace(all.bool);
+		trace(all._null);
 	}
 	
 	static function runBenchmark()
@@ -68,6 +68,7 @@ abstract ABool(Bool) from Bool to Bool
 @:publicFields
 class All implements IParsable
 {
+	var _null:Null<Bool>;
 	//single items
 	var bool:	AABool;		
 	var int:	Int;
