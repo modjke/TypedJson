@@ -1,0 +1,12 @@
+{
+  "name": "typedjson",
+  "url" : "https://github.com/modjke/TypedJson",
+  "license": "MIT",
+  "tags": ["cross", "json"],
+  "description": "",
+  "version": "0.0.1",
+  "releasenote": "WIP",
+  "contributors": ["modjke"],
+  "dependencies": {
+  }
+}
