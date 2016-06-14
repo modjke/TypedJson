@@ -37,7 +37,7 @@ enum EasyType
 class ParsableBuilder
 {
 	inline static var parseUsingName = "parseUsing";
-	
+
 	macro public static function build():Array<Field>
 	{
 		var localType = Context.getLocalType();

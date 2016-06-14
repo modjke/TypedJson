@@ -1,5 +1,6 @@
 {
   "name": "typedjson",
+  "classPath": "src",
   "url" : "https://github.com/modjke/TypedJson",
   "license": "MIT",
   "tags": ["cross", "json"],

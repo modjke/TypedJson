@@ -7,5 +7,5 @@ package mod.typedjson;
 @:autoBuild(mod.typedjson.ParsableBuilder.build())
 interface IParsable 
 {
-	
+
 }
