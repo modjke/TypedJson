@@ -37,6 +37,7 @@ enum EasyType
 class ParsableBuilder
 {
 	inline static var parseUsingName = "parseUsing";
+	inline static var parseName = "parse";
 
 	macro public static function build():Array<Field>
 	{
@@ -56,14 +57,18 @@ class ParsableBuilder
 		for (field in buildFields)
 		{
 			if (!field.access.has(AStatic))
-				switch (field.kind)
-				{
-					case FVar(t, e):							
-						fieldCases.push(createFieldCase(field.name, t));
-					case FProp(get, set, t, e):
-						fieldCases.push(createFieldCase(field.name, t));
-					case _: //
-				}
+			{
+				var expr:Case = 
+					switch (field.kind)
+					{
+						case FVar(t, e): createFieldCase(field.name, t);			
+						case FProp(get, set, t, e): createFieldCase(field.name, t);
+						case _: null;
+					}
+					
+				if (expr != null)
+					fieldCases.push(expr);
+			}
 		}
 		
 		var switchExpr:Expr = {
@@ -98,6 +103,23 @@ class ParsableBuilder
 		};		
 		
 		buildFields.push(parseUsing);
+		
+		var fun:Function = {
+			args: [ { name: "data", type: macro:String } ],
+			ret: localCType,
+			expr: macro {
+				return parseUsing(new mod.typedjson.TypedJsonParser(data));
+			}
+		}
+		
+		var parse:Field = {
+			name: parseName,
+			access: [APublic, AStatic],
+			pos: Context.currentPos(),
+			kind: FieldType.FFun(fun)
+		}
+		
+		buildFields.push(parse);
 		
 		// add an empty constructor if necessary
 		var hasConstructor = Lambda.exists(buildFields, function (f) return f.name == "new");

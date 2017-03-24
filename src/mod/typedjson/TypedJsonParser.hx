@@ -550,6 +550,7 @@ class TypedJsonParser
 			throw "Unexpected end of data. Expected ( "+quoteType+" )";
 		}
 		
+		
 		return symbol;
 	}
 
